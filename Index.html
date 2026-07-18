@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Assistant Vocal</title>
+    <!-- Tailwind CSS pour un design rapide et responsive -->
+    <script src="https://tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white font-sans flex flex-col justify-between h-screen p-6">
+
+    <!-- En-tête -->
+    <header class="text-center pt-4">
+        <h1 class="text-3xl font-bold tracking-tight text-indigo-400">VocalTask IA</h1>
+        <p class="text-sm text-slate-400 mt-1">Enregistrez et organisez vos tâches</p>
+    </header>
+
+    <!-- Zone Centrale : Statut et Bouton -->
+    <main class="flex flex-col items-center justify-center my-auto">
+        <div id="status" class="text-lg font-medium text-slate-300 mb-8 h-8 text-center">
+            Prêt à enregistrer
+        </div>
+        
+        <!-- Bouton d'enregistrement principal -->
+        <button id="recordBtn" class="w-40 h-40 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/30 transition-all duration-300 active:scale-95 focus:outline-none">
+            <!-- Icône de Micro en SVG -->
+            <svg id="micIcon" class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://w3.org">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+            </svg>
+        </button>
+    </main>
+
+    <!-- Pied de page : Liste de tâches (Aperçu) -->
+    <footer class="w-full max-w-md mx-auto bg-slate-800 rounded-2xl p-4 mb-4 min-h-[150px]">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-3">Prochains Rappels</h2>
+        <div id="taskList" class="text-sm text-slate-500 italic text-center pt-4">
+            Aucune tâche enregistrée pour le moment.
+        </div>
+    </footer>
+
+    <!-- Logique JavaScript pour le micro -->
+    <script>
+        const recordBtn = document.getElementById('recordBtn');
+        const statusText = document.getElementById('status');
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        recordBtn.addEventListener('click', async () => {
+            if (!isRecording) {
+                // Démarrer l'enregistrement
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        statusText.textContent = "Audio capturé avec succès !";
+                        recordBtn.classList.remove('bg-red-600', 'animate-pulse');
+                        recordBtn.classList.add('bg-indigo-600');
+                        
+                        // C'est ici qu'on enverra plus tard le fichier au serveur Python
+                        console.log("Fichier audio prêt :", audioBlob);
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    statusText.textContent = "Je vous écoute...";
+                    recordBtn.classList.remove('bg-indigo-600');
+                    recordBtn.classList.add('bg-red-600', 'animate-pulse');
+                } catch (err) {
+                    statusText.textContent = "Erreur d'accès au micro.";
+                    console.error(err);
+                }
+            } else {
+                // Arrêter l'enregistrement
+                mediaRecorder.stop();
+                isRecording = false;
+            }
+        });
+    </script>
+</body>
+</html>
